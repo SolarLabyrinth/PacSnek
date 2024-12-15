@@ -1,11 +1,10 @@
-[gd_scene load_steps=9 format=4 uid="uid://cslor5qqp18uc"]
+[gd_scene load_steps=10 format=4 uid="uid://cslor5qqp18uc"]
 
 [ext_resource type="Script" path="res://game.gd" id="1_vtd8d"]
 [ext_resource type="Texture2D" uid="uid://08odxsor65u6" path="res://spritesheet.png" id="1_xr0yd"]
 [ext_resource type="FontFile" uid="uid://b7u06xwoo7or3" path="res://Kenney Pixel Square.ttf" id="3_84kx6"]
 [ext_resource type="StyleBox" uid="uid://ejhp5ph1bupw" path="res://button-style.tres" id="4_mx63q"]
 [ext_resource type="StyleBox" uid="uid://d3pme8xvw26pn" path="res://button-style-pressed.tres" id="5_ibhxc"]
-[ext_resource type="Script" path="res://restart_button.gd" id="6_vwi17"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_a6pc1"]
 texture = ExtResource("1_xr0yd")
@@ -75,6 +74,12 @@ custom_data_layer_3/name = "snake"
 custom_data_layer_3/type = 1
 sources/0 = SubResource("TileSetAtlasSource_a6pc1")
 
+[sub_resource type="InputEventAction" id="InputEventAction_y2xgk"]
+action = &"restart"
+
+[sub_resource type="Shortcut" id="Shortcut_swfhs"]
+events = [SubResource("InputEventAction_y2xgk")]
+
 [node name="Game" type="Node2D"]
 process_mode = 1
 script = ExtResource("1_vtd8d")
@@ -130,8 +135,8 @@ theme_override_styles/pressed_mirrored = ExtResource("4_mx63q")
 theme_override_styles/pressed = ExtResource("5_ibhxc")
 theme_override_styles/normal_mirrored = ExtResource("4_mx63q")
 theme_override_styles/normal = ExtResource("4_mx63q")
+shortcut = SubResource("Shortcut_swfhs")
 text = "Restart"
-script = ExtResource("6_vwi17")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(180, 108)

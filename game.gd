@@ -17,6 +17,7 @@ const GHOST  = Vector2i(7, 0)
 const GHOST_COUNT = 4
 
 enum Facing {
+	None,
 	Left,
 	Right,
 	Up,
@@ -27,14 +28,14 @@ enum Facing {
 @onready var label: Label = $ScoreLabel
 @onready var game_over_label: Label = $GameOverLabel
 
-var facing := Facing.Right
+var facing := Facing.None
 var positions: Array[Vector2i] = [Vector2i(X_MAX/2,Y_MAX/2)]
 var ghost_positions: Array[Vector2i] = []
 
 func update_facing():
 	var head_position = positions[0]
 	match facing:
-		Facing.Up:
+		Facing.Up, Facing.None:
 			tile_map_layer.set_cell(head_position, 0, HEAD_UP)
 		Facing.Left:
 			tile_map_layer.set_cell(head_position, 0, HEAD_LEFT)
@@ -76,6 +77,8 @@ func is_food(coord: Vector2i) -> bool:
 	return ate_food
 
 func on_tick() -> void:	
+	if facing == Facing.None: return
+	
 	var head_position := positions[0]
 	var next_head_position := head_position
 	match facing:
@@ -136,6 +139,8 @@ func spawn_ghost():
 	tile_map_layer.set_cell(coord, 0, GHOST)
 
 func update_ghosts():
+	if facing == Facing.None: return
+	
 	for i in ghost_positions.size():
 		var original_pos: Vector2i = ghost_positions.pop_front()
 		var new_pos = get_ghost_movement(original_pos)
