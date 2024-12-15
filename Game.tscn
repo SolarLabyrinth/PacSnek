@@ -1,10 +1,11 @@
-[gd_scene load_steps=8 format=4 uid="uid://cslor5qqp18uc"]
+[gd_scene load_steps=9 format=4 uid="uid://cslor5qqp18uc"]
 
 [ext_resource type="Script" path="res://game.gd" id="1_vtd8d"]
 [ext_resource type="Texture2D" uid="uid://08odxsor65u6" path="res://spritesheet.png" id="1_xr0yd"]
 [ext_resource type="FontFile" uid="uid://b7u06xwoo7or3" path="res://Kenney Pixel Square.ttf" id="3_84kx6"]
 [ext_resource type="StyleBox" uid="uid://ejhp5ph1bupw" path="res://button-style.tres" id="4_mx63q"]
 [ext_resource type="StyleBox" uid="uid://d3pme8xvw26pn" path="res://button-style-pressed.tres" id="5_ibhxc"]
+[ext_resource type="Script" path="res://restart_button.gd" id="6_vwi17"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_a6pc1"]
 texture = ExtResource("1_xr0yd")
@@ -130,6 +131,7 @@ theme_override_styles/pressed = ExtResource("5_ibhxc")
 theme_override_styles/normal_mirrored = ExtResource("4_mx63q")
 theme_override_styles/normal = ExtResource("4_mx63q")
 text = "Restart"
+script = ExtResource("6_vwi17")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(180, 108)
