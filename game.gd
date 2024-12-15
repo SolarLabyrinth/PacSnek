@@ -1,5 +1,10 @@
 extends Node2D
 
+const X_MIN = 0
+const X_MAX = 24
+const Y_MIN = 0
+const Y_MAX = 12
+
 const NOTHING  = Vector2i(-1, -1)
 const HEAD_UP  = Vector2i(0, 0)
 const HEAD_LEFT  = Vector2i(1, 0)
@@ -20,11 +25,10 @@ enum Facing {
 @onready var tile_map_layer: TileMapLayer = $TileMapLayer
 @onready var label: Label = $Label
 
-var running := true
 var facing := Facing.Right
 var positions: Array[Vector2i] = [Vector2i(3,3)]
 
-var ghost_positions: Array[Vector2i] = [Vector2i(3,3)]
+var ghost_positions: Array[Vector2i] = []
 
 func update_facing():
 	var head_position = positions[0]
@@ -49,24 +53,30 @@ func _ready() -> void:
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	if(!running): return
-	
-	if Input.is_action_just_pressed("ui_up"):
+	var is_long = positions.size() > 1
+	if Input.is_action_just_pressed("ui_up") and (facing != Facing.Down if is_long else true):
 		facing = Facing.Up
 		update_facing()
-	if Input.is_action_just_pressed("ui_down"):
+	if Input.is_action_just_pressed("ui_down") and (facing != Facing.Up if is_long else true):
 		facing = Facing.Down
 		update_facing()
-	if Input.is_action_just_pressed("ui_left"):
+	if Input.is_action_just_pressed("ui_left") and (facing != Facing.Right if is_long else true):
 		facing = Facing.Left
 		update_facing()
-	if Input.is_action_just_pressed("ui_right"):
+	if Input.is_action_just_pressed("ui_right") and (facing != Facing.Left if is_long else true):
 		facing = Facing.Right
 		update_facing()
 
-func on_tick() -> void:
-	if(!running): return
-	
+func is_collision(coord: Vector2i) -> bool:
+	var next_cell_contents := tile_map_layer.get_cell_atlas_coords(coord)
+	var is_collision := next_cell_contents == BOUNDRY or next_cell_contents == BODY or next_cell_contents == GHOST
+	return is_collision
+func is_food(coord: Vector2i) -> bool:
+	var next_cell_contents := tile_map_layer.get_cell_atlas_coords(coord)
+	var ate_food := next_cell_contents == FOOD
+	return ate_food
+
+func on_tick() -> void:	
 	var head_position := positions[0]
 	var next_head_position := head_position
 	match facing:
@@ -78,14 +88,13 @@ func on_tick() -> void:
 			next_head_position += Vector2i(1,0)
 		Facing.Down:
 			next_head_position += Vector2i(0,1)
-	
-	var next_cell_contents := tile_map_layer.get_cell_atlas_coords(next_head_position)
-	var ate_food := next_cell_contents == FOOD
-	var is_collision := next_cell_contents == BOUNDRY or next_cell_contents == BODY
+			
+	var is_collision = is_collision(next_head_position)
+	var ate_food = is_food(next_head_position)
 	
 	if is_collision:
 		label.text = "GAME OVER. YOUR SCORE WAS: " + str(positions.size() - 1)
-		running = false
+		get_tree().paused = true
 		return
 	
 	positions.push_front(next_head_position)
@@ -106,6 +115,18 @@ func get_empty_coord():
 		var coord = Vector2i(x,y)
 		if tile_map_layer.get_cell_atlas_coords(coord) == NOTHING:
 			return coord
+func get_ghost_movement(original_pos: Vector2i):
+	var xs = [-1,0,1]
+	xs.shuffle()
+	for x in xs:
+		var ys = [-1,0,1]
+		ys.shuffle()
+		for y in ys:
+			var diff = Vector2i(x,y)
+			var coord = original_pos + diff
+			if tile_map_layer.get_cell_atlas_coords(coord) == NOTHING:
+				return coord
+	return original_pos
 
 func spawn_food():
 	var coord = get_empty_coord()
@@ -113,13 +134,13 @@ func spawn_food():
 func spawn_ghost():
 	var coord = get_empty_coord()
 	ghost_positions.push_back(coord)
+	print(ghost_positions)
 	tile_map_layer.set_cell(coord, 0, GHOST)
 
 func update_ghosts():
 	for i in ghost_positions.size():
 		var original_pos: Vector2i = ghost_positions.pop_front()
-		var new_pos = original_pos + Vector2i(randi_range(-1,1), randi_range(-1,1))
+		var new_pos = get_ghost_movement(original_pos)
 		ghost_positions.push_back(new_pos)
 		tile_map_layer.set_cell(original_pos, 0, NOTHING)
 		tile_map_layer.set_cell(new_pos, 0, GHOST)
-		pass
