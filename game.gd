@@ -133,7 +133,6 @@ func spawn_food():
 func spawn_ghost():
 	var coord = get_empty_coord()
 	ghost_positions.push_back(coord)
-	print(ghost_positions)
 	tile_map_layer.set_cell(coord, 0, GHOST)
 
 func update_ghosts():
