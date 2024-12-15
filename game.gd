@@ -14,6 +14,8 @@ const BODY  = Vector2i(4, 0)
 const FOOD  = Vector2i(5, 0)
 const GHOST  = Vector2i(7, 0)
 
+const GHOST_COUNT = 4
+
 enum Facing {
 	Left,
 	Right,
@@ -22,11 +24,11 @@ enum Facing {
 }
 
 @onready var tile_map_layer: TileMapLayer = $TileMapLayer
-@onready var label: Label = $Label
+@onready var label: Label = $ScoreLabel
+@onready var game_over_label: Label = $GameOverLabel
 
-const GHOST_COUNT = 4
 var facing := Facing.Right
-var positions: Array[Vector2i] = [Vector2i(3,3)]
+var positions: Array[Vector2i] = [Vector2i(X_MAX/2,Y_MAX/2)]
 var ghost_positions: Array[Vector2i] = []
 
 func update_facing():
@@ -41,14 +43,12 @@ func update_facing():
 		Facing.Down:
 			tile_map_layer.set_cell(head_position, 0, HEAD_DOWN)
 
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	update_facing()
 	spawn_food()
 	for n in GHOST_COUNT:
 		spawn_ghost()
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	var is_long = positions.size() > 1
 	if Input.is_action_just_pressed("ui_up") and (facing != Facing.Down if is_long else true):
@@ -92,7 +92,7 @@ func on_tick() -> void:
 	var ate_food = is_food(next_head_position)
 	
 	if is_collision:
-		label.text = "GAME OVER. YOUR SCORE WAS: " + str(positions.size() - 1)
+		game_over_label.show()
 		get_tree().paused = true
 		return
 	
@@ -143,3 +143,7 @@ func update_ghosts():
 		ghost_positions.push_back(new_pos)
 		tile_map_layer.set_cell(original_pos, 0, NOTHING)
 		tile_map_layer.set_cell(new_pos, 0, GHOST)
+
+func on_restart_pressed() -> void:
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://Game.tscn")

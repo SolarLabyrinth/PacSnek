@@ -1,8 +1,10 @@
-[gd_scene load_steps=6 format=4 uid="uid://cslor5qqp18uc"]
+[gd_scene load_steps=8 format=4 uid="uid://cslor5qqp18uc"]
 
 [ext_resource type="Script" path="res://game.gd" id="1_vtd8d"]
 [ext_resource type="Texture2D" uid="uid://08odxsor65u6" path="res://spritesheet.png" id="1_xr0yd"]
 [ext_resource type="FontFile" uid="uid://b7u06xwoo7or3" path="res://Kenney Pixel Square.ttf" id="3_84kx6"]
+[ext_resource type="StyleBox" uid="uid://ejhp5ph1bupw" path="res://button-style.tres" id="4_mx63q"]
+[ext_resource type="StyleBox" uid="uid://d3pme8xvw26pn" path="res://button-style-pressed.tres" id="5_ibhxc"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_a6pc1"]
 texture = ExtResource("1_xr0yd")
@@ -49,25 +51,13 @@ custom_data_layer_3/type = 1
 sources/0 = SubResource("TileSetAtlasSource_a6pc1")
 
 [node name="Game" type="Node2D"]
+process_mode = 1
 script = ExtResource("1_vtd8d")
 
 [node name="TileMapLayer" type="TileMapLayer" parent="."]
 tile_map_data = PackedByteArray("AAAAAAAAAAAGAAEAAAAAAAEAAAAGAAYAAAAAAAIAAAAGAAYAAAAAAAMAAAAGAAYAAAAAAAQAAAAGAAYAAAABAAAAAAAGAAUAAAACAAAAAAAGAAUAAAADAAAAAAAGAAUAAAAEAAAAAAAGAAUAAAAFAAAAAAAGAAUAAAAGAAAAAAAGAAUAAAAAAAUAAAAGAAYAAAAHAAAAAAAGAAUAAAAIAAAAAAAGAAUAAAAJAAAAAAAGAAUAAAAKAAAAAAAGAAUAAAALAAAAAAAGAAUAAAAMAAAAAAAGAAUAAAANAAAAAAAGAAUAAAAOAAAAAAAGAAUAAAAPAAAAAAAGAAUAAAAQAAAAAAAGAAUAAAARAAAAAAAGAAUAAAAAAAkAAAAGAAYAAAAAAAYAAAAGAAYAAAAAAAcAAAAGAAYAAAAAAAgAAAAGAAYAAAAAAAoAAAAGAAYAAAAWAAAAAAAGAAUAAAAVAAAAAAAGAAUAAAAUAAAAAAAGAAUAAAATAAAAAAAGAAUAAAASAAAAAAAGAAUAAAAXAAoAAAAGAAYAAAAXAAkAAAAGAAYAAAAXAAgAAAAGAAYAAAAXAAcAAAAGAAYAAAAXAAYAAAAGAAYAAAAXAAUAAAAGAAYAAAAXAAQAAAAGAAYAAAAXAAAAAAAGAAIAAAAXAAEAAAAGAAYAAAAXAAIAAAAGAAYAAAAXAAMAAAAGAAYAAAAAAAsAAAAGAAQAAAABAAsAAAAGAAUAAAACAAsAAAAGAAUAAAADAAsAAAAGAAUAAAAEAAsAAAAGAAUAAAAFAAsAAAAGAAUAAAAGAAsAAAAGAAUAAAAHAAsAAAAGAAUAAAAIAAsAAAAGAAUAAAAJAAsAAAAGAAUAAAASAAsAAAAGAAUAAAATAAsAAAAGAAUAAAAUAAsAAAAGAAUAAAAVAAsAAAAGAAUAAAAWAAsAAAAGAAUAAAAXAAsAAAAGAAMAAAARAAsAAAAGAAUAAAAQAAsAAAAGAAUAAAAPAAsAAAAGAAUAAAAOAAsAAAAGAAUAAAANAAsAAAAGAAUAAAAMAAsAAAAGAAUAAAALAAsAAAAGAAUAAAAKAAsAAAAGAAUAAAA=")
 tile_set = SubResource("TileSet_nxc4d")
 rendering_quadrant_size = 15
-
-[node name="Label" type="Label" parent="."]
-offset_top = 180.0
-offset_right = 360.0
-offset_bottom = 216.0
-theme_override_fonts/font = ExtResource("3_84kx6")
-text = "SCORE: 0"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(180, 108)
-zoom = Vector2(3, 3)
 
 [node name="Timer" type="Timer" parent="."]
 wait_time = 0.2
@@ -76,5 +66,51 @@ autostart = true
 [node name="GhostTimer" type="Timer" parent="."]
 autostart = true
 
+[node name="GameOverLabel" type="Label" parent="."]
+visible = false
+offset_left = 13.0
+offset_top = 180.0
+offset_right = 138.0
+offset_bottom = 216.0
+theme_override_fonts/font = ExtResource("3_84kx6")
+text = "GAME OVER"
+vertical_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="."]
+offset_left = 141.0
+offset_top = 180.0
+offset_right = 259.0
+offset_bottom = 216.0
+theme_override_fonts/font = ExtResource("3_84kx6")
+text = "SCORE: 0"
+vertical_alignment = 1
+
+[node name="RestartButton" type="Button" parent="."]
+process_mode = 3
+offset_left = 264.0
+offset_top = 184.0
+offset_right = 358.0
+offset_bottom = 211.0
+theme_override_colors/font_color = Color(0.921569, 0.929412, 0.913725, 1)
+theme_override_constants/align_to_largest_stylebox = 0
+theme_override_fonts/font = ExtResource("3_84kx6")
+theme_override_styles/focus = ExtResource("4_mx63q")
+theme_override_styles/disabled_mirrored = ExtResource("4_mx63q")
+theme_override_styles/disabled = ExtResource("4_mx63q")
+theme_override_styles/hover_pressed_mirrored = ExtResource("4_mx63q")
+theme_override_styles/hover_pressed = ExtResource("4_mx63q")
+theme_override_styles/hover_mirrored = ExtResource("4_mx63q")
+theme_override_styles/hover = ExtResource("4_mx63q")
+theme_override_styles/pressed_mirrored = ExtResource("4_mx63q")
+theme_override_styles/pressed = ExtResource("5_ibhxc")
+theme_override_styles/normal_mirrored = ExtResource("4_mx63q")
+theme_override_styles/normal = ExtResource("4_mx63q")
+text = "Restart"
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(180, 108)
+zoom = Vector2(3, 3)
+
 [connection signal="timeout" from="Timer" to="." method="on_tick"]
 [connection signal="timeout" from="GhostTimer" to="." method="update_ghosts"]
+[connection signal="pressed" from="RestartButton" to="." method="on_restart_pressed"]
