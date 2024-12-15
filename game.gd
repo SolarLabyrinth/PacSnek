@@ -8,6 +8,7 @@ const HEAD_RIGHT  = Vector2i(3, 0)
 const BODY  = Vector2i(4, 0)
 const FOOD  = Vector2i(5, 0)
 const BOUNDRY  = Vector2i(6, 0)
+const GHOST  = Vector2i(7, 0)
 
 enum Facing {
 	Left,
@@ -17,9 +18,13 @@ enum Facing {
 }
 
 @onready var tile_map_layer: TileMapLayer = $TileMapLayer
+@onready var label: Label = $Label
 
+var running := true
 var facing := Facing.Right
 var positions: Array[Vector2i] = [Vector2i(3,3)]
+
+var ghost_positions: Array[Vector2i] = [Vector2i(3,3)]
 
 func update_facing():
 	var head_position = positions[0]
@@ -35,14 +40,17 @@ func update_facing():
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	var head_position = positions[0]
-	print(tile_map_layer.tile_set.get_source_id(0))
-	print(tile_map_layer.get_cell_atlas_coords(Vector2i(0, 0)))
-	print(tile_map_layer.get_cell_atlas_coords(Vector2i(1, 1)))
 	update_facing()
+	spawn_food()
+	spawn_ghost()
+	spawn_ghost()
+	spawn_ghost()
+	spawn_ghost()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
+	if(!running): return
+	
 	if Input.is_action_just_pressed("ui_up"):
 		facing = Facing.Up
 		update_facing()
@@ -57,6 +65,8 @@ func _process(delta: float) -> void:
 		update_facing()
 
 func on_tick() -> void:
+	if(!running): return
+	
 	var head_position := positions[0]
 	var next_head_position := head_position
 	match facing:
@@ -74,7 +84,8 @@ func on_tick() -> void:
 	var is_collision := next_cell_contents == BOUNDRY or next_cell_contents == BODY
 	
 	if is_collision:
-		print("Game Over")
+		label.text = "GAME OVER. YOUR SCORE WAS: " + str(positions.size() - 1)
+		running = false
 		return
 	
 	positions.push_front(next_head_position)
@@ -86,14 +97,29 @@ func on_tick() -> void:
 		tile_map_layer.set_cell(tail_position, 0, NOTHING)
 	else:
 		spawn_food()
-	
-	
-		
-func spawn_food():
+		label.text = "SCORE: " + str(positions.size() - 1)
+
+func get_empty_coord():
 	while true:
 		var x = randi_range(1,22)
 		var y = randi_range(1,10)
 		var coord = Vector2i(x,y)
 		if tile_map_layer.get_cell_atlas_coords(coord) == NOTHING:
-			tile_map_layer.set_cell(coord, 0, FOOD)
-			break
+			return coord
+
+func spawn_food():
+	var coord = get_empty_coord()
+	tile_map_layer.set_cell(coord, 0, FOOD)
+func spawn_ghost():
+	var coord = get_empty_coord()
+	ghost_positions.push_back(coord)
+	tile_map_layer.set_cell(coord, 0, GHOST)
+
+func update_ghosts():
+	for i in ghost_positions.size():
+		var original_pos: Vector2i = ghost_positions.pop_front()
+		var new_pos = original_pos + Vector2i(randi_range(-1,1), randi_range(-1,1))
+		ghost_positions.push_back(new_pos)
+		tile_map_layer.set_cell(original_pos, 0, NOTHING)
+		tile_map_layer.set_cell(new_pos, 0, GHOST)
+		pass
