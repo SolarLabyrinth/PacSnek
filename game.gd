@@ -1,9 +1,9 @@
 extends Node2D
 
-const X_MIN = 0
-const X_MAX = 24
-const Y_MIN = 0
-const Y_MAX = 12
+const X_MIN = 1
+const X_MAX = 22
+const Y_MIN = 1
+const Y_MAX = 10
 
 const NOTHING  = Vector2i(-1, -1)
 const HEAD_UP  = Vector2i(0, 0)
@@ -12,7 +12,6 @@ const HEAD_DOWN  = Vector2i(2, 0)
 const HEAD_RIGHT  = Vector2i(3, 0)
 const BODY  = Vector2i(4, 0)
 const FOOD  = Vector2i(5, 0)
-const BOUNDRY  = Vector2i(6, 0)
 const GHOST  = Vector2i(7, 0)
 
 enum Facing {
@@ -25,9 +24,9 @@ enum Facing {
 @onready var tile_map_layer: TileMapLayer = $TileMapLayer
 @onready var label: Label = $Label
 
+const GHOST_COUNT = 4
 var facing := Facing.Right
 var positions: Array[Vector2i] = [Vector2i(3,3)]
-
 var ghost_positions: Array[Vector2i] = []
 
 func update_facing():
@@ -46,10 +45,8 @@ func update_facing():
 func _ready() -> void:
 	update_facing()
 	spawn_food()
-	spawn_ghost()
-	spawn_ghost()
-	spawn_ghost()
-	spawn_ghost()
+	for n in GHOST_COUNT:
+		spawn_ghost()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
@@ -68,12 +65,14 @@ func _process(delta: float) -> void:
 		update_facing()
 
 func is_collision(coord: Vector2i) -> bool:
-	var next_cell_contents := tile_map_layer.get_cell_atlas_coords(coord)
-	var is_collision := next_cell_contents == BOUNDRY or next_cell_contents == BODY or next_cell_contents == GHOST
+	var data = tile_map_layer.get_cell_tile_data(coord)
+	if data == null: return false
+	var is_collision = data.get_custom_data("wall") or data.get_custom_data("snake") or data.get_custom_data("ghost")
 	return is_collision
 func is_food(coord: Vector2i) -> bool:
-	var next_cell_contents := tile_map_layer.get_cell_atlas_coords(coord)
-	var ate_food := next_cell_contents == FOOD
+	var data = tile_map_layer.get_cell_tile_data(coord)
+	if data == null: return false
+	var ate_food = data.get_custom_data("food")
 	return ate_food
 
 func on_tick() -> void:	
@@ -110,8 +109,8 @@ func on_tick() -> void:
 
 func get_empty_coord():
 	while true:
-		var x = randi_range(1,22)
-		var y = randi_range(1,10)
+		var x = randi_range(X_MIN, X_MAX)
+		var y = randi_range(Y_MIN, Y_MAX)
 		var coord = Vector2i(x,y)
 		if tile_map_layer.get_cell_atlas_coords(coord) == NOTHING:
 			return coord
