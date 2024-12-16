@@ -1,10 +1,12 @@
 extends Node2D
 
+# Safe Game Area
 const X_MIN = 1
 const X_MAX = 22
 const Y_MIN = 1
 const Y_MAX = 10
 
+# Atlas Coords for TileMap
 const NOTHING  = Vector2i(-1, -1)
 const HEAD_UP  = Vector2i(0, 0)
 const HEAD_LEFT  = Vector2i(1, 0)
@@ -16,120 +18,108 @@ const GHOST  = Vector2i(7, 0)
 
 const GHOST_COUNT = 4
 
-enum Direction {
-	None,
-	Left,
-	Right,
-	Up,
-	Down
-}
-
-var dirDictionary = {
-	Direction.None: {
+var directions = {
+	Vector2i.ZERO: {
 		"sprite": HEAD_UP
 	},
-	Direction.Up: {
+	Vector2i.UP: {
 		"sprite": HEAD_UP,
-		"movement": Vector2i.UP,
 		"action": "ui_up",
-		"long_forbidden_direction": Direction.Down
+		"blocked_direction": Vector2i.DOWN
 	},
-	Direction.Down: {
+	Vector2i.DOWN: {
 		"sprite": HEAD_DOWN,
-		"movement": Vector2i.DOWN,
 		"action": "ui_down",
-		"long_forbidden_direction": Direction.Up
+		"blocked_direction": Vector2i.UP
 	},
-	Direction.Left: {
+	Vector2i.LEFT: {
 		"sprite": HEAD_LEFT,
-		"movement": Vector2i.LEFT,
 		"action": "ui_left",
-		"long_forbidden_direction": Direction.Right
+		"blocked_direction": Vector2i.RIGHT
 	},
-	Direction.Right: {
+	Vector2i.RIGHT: {
 		"sprite": HEAD_RIGHT,
-		"movement": Vector2i.RIGHT,
 		"action": "ui_right",
-		"long_forbidden_direction": Direction.Left
+		"blocked_direction": Vector2i.LEFT
 	}
 }
 
 @onready var tile_map_layer: TileMapLayer = $TileMapLayer
 @onready var score_label: Label = $ScoreLabel
 @onready var game_over_label: Label = $GameOverLabel
+@onready var eat_food_sound: AudioStreamPlayer = $Audio/EatFoodSound
+@onready var obnoxious_background_sound: AudioStreamPlayer = $Audio/ObnoxiousBackgroundSound
+@onready var game_over_sound: AudioStreamPlayer = $Audio/GameOverSound
 
-var direction := Direction.None
+var direction := Vector2i.ZERO
+var next_direction := Vector2i.ZERO
 var positions: Array[Vector2i] = [Vector2i(X_MAX,Y_MAX)/2]
 var ghost_positions: Array[Vector2i] = []
 
-func set_cell(coord: Vector2i, atlas: Vector2i):
-	tile_map_layer.set_cell(coord, 0, atlas)
-
-func update_head_sprite():
-	set_cell(positions[0], dirDictionary[direction].sprite)
-func update_tail_sprite():
-	set_cell(positions.pop_back(), NOTHING)
-
 func _ready() -> void:	
-	update_head_sprite()
+	setup_game()
+func _process(_delta: float) -> void:
+	handle_input()
+
+func setup_game():	
+	update_head_sprite(direction)
 	spawn_food()
 	for n in GHOST_COUNT:
 		spawn_ghost()
+func restart_game() -> void:
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://Game.tscn")
 
-func _process(delta: float) -> void:
+func handle_input():
 	var is_long = positions.size() > 1
-	for key in dirDictionary:
-		var value = dirDictionary[key]
-		if  (value.has("action") and Input.is_action_just_pressed(value.action)) \
-		and (direction != value.long_forbidden_direction if is_long else true):
-			direction = key
-			update_head_sprite()
+	for key in directions:
+		var value = directions[key]
+		if  (value.has("action") and Input.is_action_pressed(value.action)) \
+		and (direction != value.blocked_direction if is_long else true):
+			next_direction = key
+			update_head_sprite(next_direction)
 			break
 
-func is_collision(coord: Vector2i) -> bool:
-	var data = tile_map_layer.get_cell_tile_data(coord)
-	if data == null: return false
-	var is_collision = data.get_custom_data("wall") or data.get_custom_data("snake") or data.get_custom_data("ghost")
-	return is_collision
-func is_food(coord: Vector2i) -> bool:
-	var data = tile_map_layer.get_cell_tile_data(coord)
-	if data == null: return false
-	var ate_food = data.get_custom_data("food")
-	return ate_food
-
 func on_tick() -> void:	
-	if direction == Direction.None: return
+	direction = next_direction
+	if direction == Vector2i.ZERO: return
 	
 	var head_position := positions[0]
-	var next_head_position: Vector2i = head_position + dirDictionary[direction].movement
+	var next_head_position: Vector2i = head_position + direction
 	
-	var is_collision = is_collision(next_head_position)
-	var ate_food = is_food(next_head_position)
+	var collided = get_cell_bool(next_head_position, "wall") \
+				or get_cell_bool(next_head_position, "snake") \
+				or get_cell_bool(next_head_position, "ghost")
+	var ate_food = get_cell_bool(next_head_position, "food")
 	
-	if is_collision:
+	if collided:
 		game_over_label.show()
+		obnoxious_background_sound.stop()
+		game_over_sound.play()
 		get_tree().paused = true
 		return
 	
 	positions.push_front(next_head_position)
-	update_head_sprite()
+	update_head_sprite(direction)
 	set_cell(head_position, BODY)
 	
 	if !ate_food:
 		update_tail_sprite()
 	else:
 		spawn_food()
+		eat_food_sound.play()
 		score_label.text = "SCORE: " + str(positions.size() - 1)
 
-func get_empty_coord():
-	while true:
-		var x = randi_range(X_MIN, X_MAX)
-		var y = randi_range(Y_MIN, Y_MAX)
-		var coord = Vector2i(x,y)
-		if tile_map_layer.get_cell_atlas_coords(coord) == NOTHING:
-			return coord
+func spawn_food():
+	var coord = get_empty_coord()
+	set_cell(coord, FOOD)
 
-func get_ghost_movement(original_pos: Vector2i):
+#region Ghosts
+func spawn_ghost():
+	var coord = get_empty_coord()
+	ghost_positions.push_back(coord)
+	set_cell(coord, GHOST)
+func get_next_ghost_coord(pos: Vector2i):
 	var diffs = [
 		Vector2i.UP,
 		Vector2i.DOWN,
@@ -138,29 +128,37 @@ func get_ghost_movement(original_pos: Vector2i):
 	]
 	diffs.shuffle()
 	for diff in diffs: 
-		var coord = original_pos + diff
+		var coord = pos + diff
 		if tile_map_layer.get_cell_atlas_coords(coord) == NOTHING:
 			return coord
-	return original_pos
-
-func spawn_food():
-	var coord = get_empty_coord()
-	set_cell(coord, FOOD)
-func spawn_ghost():
-	var coord = get_empty_coord()
-	ghost_positions.push_back(coord)
-	set_cell(coord, GHOST)
-
+	return pos
 func update_ghosts():
-	if direction == Direction.None: return
-	
+	if direction == Vector2i.ZERO: return
 	for i in ghost_positions.size():
-		var original_pos: Vector2i = ghost_positions.pop_front()
-		var new_pos = get_ghost_movement(original_pos)
+		var pos: Vector2i = ghost_positions.pop_front()
+		var new_pos = get_next_ghost_coord(pos)
 		ghost_positions.push_back(new_pos)
-		set_cell(original_pos, NOTHING)
+		set_cell(pos, NOTHING)
 		set_cell(new_pos, GHOST)
+#endregion
 
-func on_restart_pressed() -> void:
-	get_tree().paused = false
-	get_tree().change_scene_to_file("res://Game.tscn")
+#region Utils
+func set_cell(coord: Vector2i, atlas: Vector2i):
+	tile_map_layer.set_cell(coord, 0, atlas)
+func get_cell_bool(coord: Vector2i, key: String) -> bool:
+	var data = tile_map_layer.get_cell_tile_data(coord)
+	if data == null: return false
+	return data.get_custom_data(key)
+func update_head_sprite(dir: Vector2i):
+	set_cell(positions[0], directions[dir].sprite)
+func update_tail_sprite():
+	set_cell(positions.pop_back(), NOTHING)
+func get_empty_coord():
+	var options: Array[Vector2i] = []
+	for x in range(X_MIN, X_MAX):
+		for y in range(Y_MIN, Y_MAX):
+			var coord = Vector2i(x, y)
+			if tile_map_layer.get_cell_atlas_coords(coord) == NOTHING:
+				options.push_back(coord)
+	return options.pick_random()
+#endregion

@@ -1,10 +1,13 @@
-[gd_scene load_steps=10 format=4 uid="uid://cslor5qqp18uc"]
+[gd_scene load_steps=13 format=4 uid="uid://cslor5qqp18uc"]
 
 [ext_resource type="Script" path="res://game.gd" id="1_vtd8d"]
-[ext_resource type="Texture2D" uid="uid://08odxsor65u6" path="res://spritesheet.png" id="1_xr0yd"]
-[ext_resource type="FontFile" uid="uid://b7u06xwoo7or3" path="res://Kenney Pixel Square.ttf" id="3_84kx6"]
-[ext_resource type="StyleBox" uid="uid://ejhp5ph1bupw" path="res://button-style.tres" id="4_mx63q"]
-[ext_resource type="StyleBox" uid="uid://d3pme8xvw26pn" path="res://button-style-pressed.tres" id="5_ibhxc"]
+[ext_resource type="Texture2D" uid="uid://08odxsor65u6" path="res://assets/spritesheet.png" id="1_xr0yd"]
+[ext_resource type="FontFile" uid="uid://b7u06xwoo7or3" path="res://assets/Kenney Pixel Square.ttf" id="3_84kx6"]
+[ext_resource type="StyleBox" uid="uid://ejhp5ph1bupw" path="res://assets/button-style.tres" id="4_mx63q"]
+[ext_resource type="StyleBox" uid="uid://d3pme8xvw26pn" path="res://assets/button-style-pressed.tres" id="5_ibhxc"]
+[ext_resource type="AudioStream" uid="uid://b2frt7f3q3x3r" path="res://assets/powerUp2.ogg" id="6_mbo2s"]
+[ext_resource type="AudioStream" uid="uid://b0kww0wyj7myj" path="res://assets/jump1.ogg" id="7_4jhgc"]
+[ext_resource type="AudioStream" uid="uid://cesge3uh0m513" path="res://assets/gameover4.ogg" id="8_kn7mw"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_a6pc1"]
 texture = ExtResource("1_xr0yd")
@@ -142,6 +145,26 @@ text = "Restart"
 position = Vector2(180, 108)
 zoom = Vector2(3, 3)
 
+[node name="Audio" type="Node" parent="."]
+process_mode = 3
+
+[node name="EatFoodSound" type="AudioStreamPlayer" parent="Audio"]
+stream = ExtResource("6_mbo2s")
+playback_type = 1
+parameters/looping = false
+
+[node name="ObnoxiousBackgroundSound" type="AudioStreamPlayer" parent="Audio"]
+stream = ExtResource("7_4jhgc")
+volume_db = -25.0
+autoplay = true
+playback_type = 1
+parameters/looping = true
+
+[node name="GameOverSound" type="AudioStreamPlayer" parent="Audio"]
+stream = ExtResource("8_kn7mw")
+volume_db = -15.0
+playback_type = 1
+
 [connection signal="timeout" from="Timer" to="." method="on_tick"]
 [connection signal="timeout" from="GhostTimer" to="." method="update_ghosts"]
-[connection signal="pressed" from="RestartButton" to="." method="on_restart_pressed"]
+[connection signal="pressed" from="RestartButton" to="." method="restart_game"]
