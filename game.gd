@@ -70,13 +70,15 @@ func restart_game() -> void:
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://Game.tscn")
 
+# Loop over the direction dictionary and check if any of the "action"'s are pressed
+# If so, make sure we're not navigating directly into the space we just came from when long
 func handle_input():
 	var is_long = positions.size() > 1
 	for key in directions:
 		var value = directions[key]
 		if  (value.has("action") and Input.is_action_pressed(value.action)) \
 		and (direction != value.blocked_direction if is_long else true):
-			next_direction = key
+			next_direction = key # Don't actually change directions until the next tick
 			update_head_sprite(next_direction)
 			break
 
@@ -85,14 +87,12 @@ func on_tick() -> void:
 	if direction == Vector2i.ZERO: return
 	
 	var head_position := positions[0]
-	var next_head_position: Vector2i = head_position + direction
+	var next_head_position := head_position + direction
 	
-	var collided = get_cell_bool(next_head_position, "wall") \
-				or get_cell_bool(next_head_position, "snake") \
-				or get_cell_bool(next_head_position, "ghost")
-	var ate_food = get_cell_bool(next_head_position, "food")
+	var is_dead = get_cell_data(next_head_position, "kills_player")
+	var ate_food = get_cell_data(next_head_position, "food")
 	
-	if collided:
+	if is_dead:
 		game_over_label.show()
 		obnoxious_background_sound.stop()
 		game_over_sound.play()
@@ -108,7 +108,7 @@ func on_tick() -> void:
 	else:
 		spawn_food()
 		eat_food_sound.play()
-		score_label.text = "SCORE: " + str(positions.size() - 1)
+		score_label.text = "SCORE: %d" % (positions.size() - 1)
 
 func spawn_food():
 	var coord = get_empty_coord()
@@ -145,7 +145,7 @@ func update_ghosts():
 #region Utils
 func set_cell(coord: Vector2i, atlas: Vector2i):
 	tile_map_layer.set_cell(coord, 0, atlas)
-func get_cell_bool(coord: Vector2i, key: String) -> bool:
+func get_cell_data(coord: Vector2i, key: String) -> bool:
 	var data = tile_map_layer.get_cell_tile_data(coord)
 	if data == null: return false
 	return data.get_custom_data(key)
