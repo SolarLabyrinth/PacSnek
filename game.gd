@@ -89,8 +89,12 @@ func on_tick() -> void:
 	var head_position := positions[0]
 	var next_head_position := head_position + direction
 	
-	var is_dead = get_cell_data(next_head_position, "kills_player")
-	var ate_food = get_cell_data(next_head_position, "food")
+	var is_dead = false
+	var ate_food = false
+	var tile_data = tile_map_layer.get_cell_tile_data(next_head_position)
+	if tile_data != null:
+		is_dead = tile_data.get_custom_data("kills_player")
+		ate_food = tile_data.get_custom_data("food")
 	
 	if is_dead:
 		game_over_label.show()
@@ -104,7 +108,7 @@ func on_tick() -> void:
 	set_cell(head_position, BODY)
 	
 	if !ate_food:
-		update_tail_sprite()
+		set_cell(positions.pop_back(), NOTHING) # Remove last position from tail
 	else:
 		spawn_food()
 		eat_food_sound.play()
@@ -145,14 +149,8 @@ func update_ghosts():
 #region Utils
 func set_cell(coord: Vector2i, atlas: Vector2i):
 	tile_map_layer.set_cell(coord, 0, atlas)
-func get_cell_data(coord: Vector2i, key: String) -> bool:
-	var data = tile_map_layer.get_cell_tile_data(coord)
-	if data == null: return false
-	return data.get_custom_data(key)
 func update_head_sprite(dir: Vector2i):
 	set_cell(positions[0], directions[dir].sprite)
-func update_tail_sprite():
-	set_cell(positions.pop_back(), NOTHING)
 func get_empty_coord():
 	var options: Array[Vector2i] = []
 	for x in range(X_MIN, X_MAX):
